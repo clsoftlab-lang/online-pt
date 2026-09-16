@@ -1,0 +1,105 @@
+{
+  "_comment": "SPDX-License-Identifier: Apache-2.0 · Copyright 2026 CLSOFTLAB, Dr. Lee Il-guk. 가상(fictional) 데모 데이터.",
+  "plans": [
+    { "id": "plan-1", "name": "체험 1회권", "sessions": 1, "price": 39000, "badge": "처음이라면", "desc": "부담 없이 1:1 화상 PT를 한 번 경험해 보세요." },
+    { "id": "plan-4", "name": "스타터 4회권", "sessions": 4, "price": 148000, "badge": "인기", "desc": "4주 습관 형성에 딱 맞는 기본 패키지." },
+    { "id": "plan-12", "name": "베이직 12회권", "sessions": 12, "price": 396000, "badge": "가성비", "desc": "회당 33,000원. 3개월 꾸준한 관리." },
+    { "id": "plan-24", "name": "프로 24회권", "sessions": 24, "price": 720000, "badge": "최대 할인", "desc": "회당 30,000원. 본격적인 변화를 원한다면." }
+  ],
+  "routines": [
+    {
+      "id": "r-fatburn",
+      "name": "홈 지방연소 서킷",
+      "goal": "다이어트",
+      "level": "초급",
+      "durationMin": 30,
+      "focus": ["전신", "유산소"],
+      "exercises": [
+        { "name": "제자리 마칭 워밍업", "sets": 1, "reps": "3분", "rest": 20, "cue": "팔을 크게 흔들며 심박 올리기" },
+        { "name": "스쿼트", "sets": 3, "reps": "15회", "rest": 40, "cue": "무릎이 발끝을 넘지 않게" },
+        { "name": "무릎 대고 푸시업", "sets": 3, "reps": "10회", "rest": 40, "cue": "가슴이 바닥에 닿기 직전까지" },
+        { "name": "마운틴 클라이머", "sets": 3, "reps": "30초", "rest": 30, "cue": "허리 꺾이지 않게 코어 유지" },
+        { "name": "글루트 브릿지", "sets": 3, "reps": "15회", "rest": 30, "cue": "엉덩이 끝까지 조이기" },
+        { "name": "플랭크", "sets": 3, "reps": "40초", "rest": 30, "cue": "머리-엉덩이-발 일직선" }
+      ]
+    },
+    {
+      "id": "r-strength",
+      "name": "덤벨 상·하체 근력",
+      "goal": "근력강화",
+      "level": "중급",
+      "durationMin": 45,
+      "focus": ["상체", "하체"],
+      "exercises": [
+        { "name": "동적 스트레칭", "sets": 1, "reps": "4분", "rest": 20, "cue": "관절 가동범위 열기" },
+        { "name": "덤벨 고블릿 스쿼트", "sets": 4, "reps": "12회", "rest": 60, "cue": "가슴 펴고 앉기" },
+        { "name": "덤벨 벤치/플로어 프레스", "sets": 4, "reps": "10회", "rest": 60, "cue": "팔꿈치 45도" },
+        { "name": "원암 덤벨 로우", "sets": 4, "reps": "12회", "rest": 60, "cue": "견갑 모으며 당기기" },
+        { "name": "루마니안 데드리프트", "sets": 3, "reps": "12회", "rest": 60, "cue": "햄스트링 늘어남 느끼기" },
+        { "name": "덤벨 숄더 프레스", "sets": 3, "reps": "10회", "rest": 50, "cue": "허리 젖히지 않기" }
+      ]
+    },
+    {
+      "id": "r-posture",
+      "name": "거북목·라운드숄더 교정",
+      "goal": "자세교정",
+      "level": "초급",
+      "durationMin": 25,
+      "focus": ["목", "어깨", "등"],
+      "exercises": [
+        { "name": "목 스트레칭", "sets": 2, "reps": "각 30초", "rest": 15, "cue": "반대손으로 지그시" },
+        { "name": "월 엔젤", "sets": 3, "reps": "12회", "rest": 30, "cue": "팔이 벽에서 떨어지지 않게" },
+        { "name": "밴드 페이스풀", "sets": 3, "reps": "15회", "rest": 30, "cue": "견갑 뒤로 모으기" },
+        { "name": "프론 Y-T-W", "sets": 3, "reps": "각 8회", "rest": 40, "cue": "엄지 천장 보게" },
+        { "name": "흉추 회전 스트레칭", "sets": 2, "reps": "각 10회", "rest": 20, "cue": "시선 손끝 따라가기" }
+      ]
+    },
+    {
+      "id": "r-core",
+      "name": "코어 안정화 필라테스",
+      "goal": "코어",
+      "level": "초급",
+      "durationMin": 30,
+      "focus": ["코어", "복부"],
+      "exercises": [
+        { "name": "호흡 & 골반 세팅", "sets": 1, "reps": "3분", "rest": 15, "cue": "갈비뼈 닫으며 복부 조이기" },
+        { "name": "데드버그", "sets": 3, "reps": "각 10회", "rest": 30, "cue": "허리 바닥에 밀착" },
+        { "name": "버드독", "sets": 3, "reps": "각 10회", "rest": 30, "cue": "골반 흔들리지 않게" },
+        { "name": "사이드 플랭크", "sets": 3, "reps": "각 30초", "rest": 30, "cue": "골반 아래로 처지지 않게" },
+        { "name": "헌드레드", "sets": 3, "reps": "20펌프", "rest": 30, "cue": "어깨 긴장 풀기" }
+      ]
+    },
+    {
+      "id": "r-senior",
+      "name": "시니어 균형·근력",
+      "goal": "시니어",
+      "level": "초급",
+      "durationMin": 20,
+      "focus": ["균형", "하체", "낙상예방"],
+      "exercises": [
+        { "name": "의자 잡고 발끝 서기", "sets": 3, "reps": "12회", "rest": 30, "cue": "천천히 올렸다 내리기" },
+        { "name": "의자 스쿼트", "sets": 3, "reps": "10회", "rest": 40, "cue": "엉덩이로 의자 살짝 터치" },
+        { "name": "한 발 서기 균형", "sets": 3, "reps": "각 20초", "rest": 30, "cue": "벽 가까이서 안전하게" },
+        { "name": "벽 푸시업", "sets": 3, "reps": "12회", "rest": 30, "cue": "팔꿈치 천천히 굽히기" },
+        { "name": "발목 펌프 & 스트레칭", "sets": 2, "reps": "각 15회", "rest": 20, "cue": "혈액순환 마무리" }
+      ]
+    },
+    {
+      "id": "r-profile",
+      "name": "바디프로필 4주 마무리",
+      "goal": "바디프로필",
+      "level": "고급",
+      "durationMin": 50,
+      "focus": ["전신", "선명도"],
+      "exercises": [
+        { "name": "풀바디 워밍업", "sets": 1, "reps": "5분", "rest": 20, "cue": "가동성 + 심박 준비" },
+        { "name": "점프 스쿼트", "sets": 4, "reps": "15회", "rest": 45, "cue": "착지 부드럽게" },
+        { "name": "디클라인 푸시업", "sets": 4, "reps": "12회", "rest": 45, "cue": "가슴 상부 자극" },
+        { "name": "덤벨 런지", "sets": 4, "reps": "각 12회", "rest": 45, "cue": "무릎 90도" },
+        { "name": "슈퍼맨 홀드", "sets": 3, "reps": "30초", "rest": 30, "cue": "등 전체 조이기" },
+        { "name": "복근 서킷(크런치+레그레이즈)", "sets": 3, "reps": "각 15회", "rest": 30, "cue": "반동 없이 통제" },
+        { "name": "버피", "sets": 3, "reps": "12회", "rest": 40, "cue": "마지막 커팅 유산소" }
+      ]
+    }
+  ]
+}

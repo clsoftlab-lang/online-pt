@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<!--
+  SPDX-License-Identifier: Apache-2.0
+  Copyright 2026 CLSOFTLAB (씨엘소프트랩), Dr. Lee Il-guk (이일국)
+-->
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="온라인 퍼스널 트레이닝 — 트레이너를 찾아 예약하고 1:1 화상 홈PT를 받는 데모 SPA (모의 결제·모의 화상)" />
+  <meta name="color-scheme" content="light dark" />
+  <title>온라인 PT · Online PT</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%92%AA%3C/text%3E%3C/svg%3E" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div id="app">
+    <header class="app-header">
+      <div class="brand">
+        <span class="brand-mark" aria-hidden="true">💪</span>
+        <div>
+          <h1>온라인 PT</h1>
+          <p class="tagline">트레이너를 찾아 예약하고, 집에서 1:1 화상 홈트</p>
+        </div>
+      </div>
+      <div class="header-actions">
+        <span class="credit-chip" id="credit-chip" title="남은 PT 횟수">🎟️ <b id="credit-count">0</b>회</span>
+        <span class="demo-chip" title="시뮬레이션 데모 모드">DEMO</span>
+        <button id="theme-toggle" class="icon-btn" type="button" aria-label="라이트/다크 전환">🌗</button>
+        <button id="reset-btn" class="icon-btn" type="button" aria-label="데이터 초기화" title="모든 데모 데이터 초기화">↺</button>
+      </div>
+    </header>
+
+    <nav class="tabs" role="tablist" aria-label="주요 화면">
+      <button class="tab is-active" data-view="explore" role="tab">트레이너 탐색</button>
+      <button class="tab" data-view="passes" role="tab">이용권</button>
+      <button class="tab" data-view="bookings" role="tab">예약 <span id="bookings-count" class="pill">0</span></button>
+      <button class="tab" data-view="progress" role="tab">진행상황</button>
+      <button class="tab" data-view="survey" role="tab">맞춤추천</button>
+    </nav>
+
+    <main class="content">
+      <!-- 트레이너 탐색 -->
+      <section id="view-explore" class="view is-active" role="tabpanel">
+        <div class="filters">
+          <input id="search" type="search" placeholder="트레이너·전문분야 검색…" aria-label="검색" />
+          <select id="filter-specialty" aria-label="전문분야 필터"></select>
+          <select id="filter-gender" aria-label="성별 필터">
+            <option value="all">성별 전체</option>
+            <option value="female">여성</option>
+            <option value="male">남성</option>
+          </select>
+          <select id="filter-price" aria-label="가격 필터">
+            <option value="0">가격 전체</option>
+            <option value="35000">3.5만원 이하</option>
+            <option value="45000">4.5만원 이하</option>
+            <option value="60000">6만원 이하</option>
+          </select>
+          <select id="filter-rating" aria-label="평점 필터">
+            <option value="0">평점 전체</option>
+            <option value="4.5">4.5+ 이상</option>
+            <option value="4.8">4.8+ 이상</option>
+          </select>
+          <select id="filter-sort" aria-label="정렬">
+            <option value="rating">평점순</option>
+            <option value="reviews">리뷰많은순</option>
+            <option value="priceAsc">가격 낮은순</option>
+            <option value="priceDesc">가격 높은순</option>
+            <option value="experience">경력순</option>
+          </select>
+        </div>
+        <p id="explore-count" class="result-count"></p>
+        <div id="trainer-grid" class="trainer-grid"></div>
+      </section>
+
+      <!-- 이용권 구매 -->
+      <section id="view-passes" class="view" role="tabpanel">
+        <h2>PT 이용권 구매</h2>
+        <p class="section-note">모의 결제입니다. 실제 금액이 청구되지 않으며, 구매 즉시 남은 횟수에 반영됩니다.</p>
+        <div id="plan-grid" class="plan-grid"></div>
+        <h3>내 이용권</h3>
+        <div id="my-passes" class="my-passes"></div>
+      </section>
+
+      <!-- 예약 -->
+      <section id="view-bookings" class="view" role="tabpanel">
+        <h2>내 예약</h2>
+        <div id="bookings-view" class="bookings-view"></div>
+      </section>
+
+      <!-- 진행상황 -->
+      <section id="view-progress" class="view" role="tabpanel">
+        <h2>내 진행상황</h2>
+        <div id="progress-view" class="progress-view"></div>
+      </section>
+
+      <!-- 맞춤추천 설문 -->
+      <section id="view-survey" class="view" role="tabpanel">
+        <h2>체형·목표 설문</h2>
+        <p class="section-note">몇 가지 선택으로 나에게 맞는 트레이너를 추천해 드립니다.</p>
+        <form id="survey-form" class="survey-form" autocomplete="off"></form>
+        <div id="survey-result" class="survey-result"></div>
+      </section>
+    </main>
+
+    <!-- 트레이너 상세 -->
+    <div id="detail-backdrop" class="backdrop" hidden>
+      <div id="trainer-detail" class="dialog" role="dialog" aria-modal="true" aria-label="트레이너 상세"></div>
+    </div>
+
+    <!-- 예약 다이얼로그 -->
+    <div id="booking-backdrop" class="backdrop" hidden>
+      <div id="booking-dialog" class="dialog" role="dialog" aria-modal="true" aria-label="예약"></div>
+    </div>
+
+    <!-- 화상 PT 세션 룸(전체화면 오버레이) -->
+    <div id="session-room" class="session-room" hidden aria-label="화상 PT 세션"></div>
+
+    <!-- 세션 요약 -->
+    <div id="summary-backdrop" class="backdrop" hidden>
+      <div id="session-summary" class="dialog" role="dialog" aria-modal="true" aria-label="세션 요약"></div>
+    </div>
+
+    <!-- 토스트 -->
+    <div id="toast" class="toast" hidden></div>
+
+    <footer class="app-footer">
+      <p><strong>데모 모드 안내:</strong> 화상 PT 화면은 <strong>시뮬레이션 UI</strong>이며 실제 카메라·WebRTC 영상이 아닙니다. 데이터는 <strong>가상 시드값</strong>이고 <strong>localStorage</strong>에 저장될 뿐 실제 DB가 아닙니다. <strong>실제 결제·계정·개인정보(PII)는 없습니다.</strong></p>
+      <p>© 2026 CLSOFTLAB (씨엘소프트랩), Dr. Lee Il-guk (이일국) · Apache-2.0 · Not an official Anthropic product.</p>
+    </footer>
+  </div>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>
