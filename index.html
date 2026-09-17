@@ -37,6 +37,7 @@
       <button class="tab" data-view="bookings" role="tab">예약 <span id="bookings-count" class="pill">0</span></button>
       <button class="tab" data-view="progress" role="tab">진행상황</button>
       <button class="tab" data-view="survey" role="tab">맞춤추천</button>
+      <button class="tab" data-view="ai" role="tab">🤖 AI 코치</button>
     </nav>
 
     <main class="content">
@@ -100,6 +101,61 @@
         <p class="section-note">몇 가지 선택으로 나에게 맞는 트레이너를 추천해 드립니다.</p>
         <form id="survey-form" class="survey-form" autocomplete="off"></form>
         <div id="survey-result" class="survey-result"></div>
+      </section>
+
+      <!-- AI 코치 (챗봇 · 루틴 생성 · 세션 피드백) -->
+      <section id="view-ai" class="view" role="tabpanel">
+        <h2>🤖 AI 코치</h2>
+        <p class="section-note">
+          <b>일반적인 운동 가이드이며 의학적 조언이 아닙니다.</b> 통증·질환·부상이 있으면 전문의와 상담하세요.
+          <br />데모 모드에서는 <b>모의 AI(MockProvider)</b>가 답합니다. 실제 Claude 연동은 <code>server/</code> 프록시 + <code>ai/config.js</code>의 <code>AI_ENDPOINT</code>로 켭니다. <b>API 키는 서버에만 보관됩니다.</b>
+        </p>
+
+        <!-- (1) 운동 코치 챗봇 -->
+        <div class="ai-card">
+          <h3>운동 코치 챗봇</h3>
+          <p class="section-note">목표·부상 정보를 입력하면 조언과 어울리는 트레이너를 추천합니다.</p>
+          <div class="field-row">
+            <label class="field"><span>주요 목표</span>
+              <select id="ai-chat-goal"></select>
+            </label>
+            <label class="field"><span>운동 수준</span>
+              <select id="ai-chat-level">
+                <option>초급</option><option>중급</option><option>고급</option>
+              </select>
+            </label>
+          </div>
+          <label class="field"><span>부상/주의 부위 (선택)</span>
+            <input type="text" id="ai-chat-injuries" placeholder="예) 무릎, 허리" />
+          </label>
+          <label class="field"><span>질문 (선택)</span>
+            <textarea id="ai-chat-message" rows="2" placeholder="예) 주 몇 회부터 시작하면 좋을까요?"></textarea>
+          </label>
+          <button class="btn primary" id="ai-chat-send">코치에게 물어보기</button>
+          <pre class="ai-output" id="ai-chat-output" aria-live="polite"></pre>
+        </div>
+
+        <!-- (2) 목표 → 맞춤 루틴 생성 -->
+        <div class="ai-card">
+          <h3>목표 → 맞춤 루틴 생성</h3>
+          <div class="field-row">
+            <label class="field"><span>목표</span>
+              <select id="ai-routine-goal"></select>
+            </label>
+            <label class="field"><span>수준</span>
+              <select id="ai-routine-level">
+                <option>초급</option><option>중급</option><option>고급</option>
+              </select>
+            </label>
+            <label class="field"><span>가용 시간(분)</span>
+              <select id="ai-routine-min">
+                <option>20</option><option selected>30</option><option>45</option><option>60</option>
+              </select>
+            </label>
+          </div>
+          <button class="btn primary" id="ai-routine-gen">루틴 생성</button>
+          <pre class="ai-output" id="ai-routine-output" aria-live="polite"></pre>
+        </div>
       </section>
     </main>
 

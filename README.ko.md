@@ -87,6 +87,40 @@ GitHub Actions에서 Node 20으로 `node check.mjs` 실행.
 
 > **Not an official Anthropic product.** 독립 오픈소스 데모로 제작되었습니다.
 
+## 🤖 AI 기능 (API 연동)
+
+앱에는 **교체 가능한 AI 레이어**가 포함되어 있으며, 세 가지 기능 모두 **일반적인 운동 가이드이며 의학적 조언이 아님**을 명시합니다.
+
+1. **AI 운동 코치 챗봇** — 목표·부상 입력 → 조언 + 어울리는 트레이너 추천.
+2. **목표 → 맞춤 루틴 생성** — 목표/수준/가용 시간으로 운동 루틴 생성.
+3. **세션 요약/피드백 생성** — 세션 종료 요약 창에서 요약 + 코치 피드백.
+
+**데모 모드 = mock (서버·키 불필요).** `ai/config.js` 의 `AI_ENDPOINT = ""` 이면 `askAI(task, payload)` 가
+앱의 트레이너/루틴 데이터를 재사용하는 **결정론적 한국어 MockProvider** 로 동작합니다 — AI 탭이 바로 작동합니다.
+
+**실제 Claude 연동**은 백엔드 프록시를 실행하고 프론트가 이를 가리키게 하면 됩니다.
+
+```bash
+cd server && npm install && cp .env.example .env   # .env 에 키 입력 후:
+npm start                                           # http://localhost:8790
+```
+
+그리고 `ai/config.js` 를 설정:
+
+```js
+export const AI_ENDPOINT = "http://localhost:8790/api/ai";
+```
+
+프록시([`server/index.mjs`](server/index.mjs))가 `@anthropic-ai/sdk` 로 Claude(모델 **`claude-opus-5`**)를
+`process.env.ANTHROPIC_API_KEY` 로 호출하고 응답을 스트리밍합니다.
+
+> **🔐 키는 오직 서버에만 둡니다.** API 키는 백엔드(`ANTHROPIC_API_KEY`)에만 존재하며,
+> **브라우저·프론트 코드·리포지토리에는 절대 두지 않습니다.** 프론트는 `{ task, payload }` 만 `AI_ENDPOINT` 로 보낼 뿐 키를 알지 못합니다.
+> CI 는 `node check.mjs`(=`AI_ENDPOINT` 가 비었는지 + 실제 키 형식이 없는지 검사)만 실행하며,
+> 의존성 설치·서버 실행·실제 API 호출은 하지 않습니다.
+
+자세한 내용은 [`server/README.md`](server/README.md) 참고.
+
 ## 🎓 아이디어 출처
 
 이 프로젝트의 씨앗이 된 아이디어는 **용인대학교 이일국 교수님의 창업 수업**에서 나왔습니다. 그 수업의 학생들이 내놓은 창업 아이디어들은 하나같이 특출나게 빛났고, 이 프로젝트는 그중에서도 유난히 반짝였던 아이디어를 마침내 실제로 작동하는 서비스로 구현한 것입니다. 번뜩이는 상상력을 보여준 제자들에게 깊은 존경과 고마움을 전합니다. *(학생 개인정보는 전혀 담지 않았으며, 아이디어만을 클린룸으로 새로 구현했습니다.)*

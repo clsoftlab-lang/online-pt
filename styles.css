@@ -312,6 +312,25 @@ textarea { resize: vertical; font-family: inherit; }
 }
 .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
+/* AI 코치 */
+.ai-card {
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 16px; margin: 14px 0; box-shadow: var(--shadow);
+}
+.ai-card h3, .ai-card h4 { margin: 0 0 6px; }
+.ai-card .btn { margin-top: 10px; }
+.ai-output {
+  margin: 12px 0 0; padding: 12px 14px; min-height: 1.2em;
+  background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--radius-sm);
+  color: var(--text); font-size: .88rem; line-height: 1.55;
+  white-space: pre-wrap; word-break: break-word; overflow-x: auto;
+  font-family: inherit;
+}
+.ai-output:empty { display: none; }
+.ai-output.streaming { border-color: var(--brand); }
+.ai-output.streaming::after { content: '▍'; color: var(--brand); animation: ai-blink 1s steps(1) infinite; }
+@keyframes ai-blink { 50% { opacity: 0; } }
+
 /* 푸터 */
 .app-footer { margin-top: 2.5rem; padding-top: 1.2rem; border-top: 1px solid var(--border); color: var(--muted); font-size: .8rem; }
 .app-footer strong { color: var(--text); }

@@ -19,6 +19,8 @@ import {
   computeProgress, computeStreak, recommendTrainers, filterTrainers,
   generateSlots, buildSessionSummary,
 } from './pt-engine.js';
+import { AI_ENDPOINT } from './ai/config.js';
+import { askAI } from './ai/ai.js';
 
 const ROOT = dirname(fileURLToPath(import.meta.url));
 let pass = 0; let fail = 0;
@@ -78,7 +80,8 @@ for (const f of files.filter((x) => x.endsWith('.js') || x.endsWith('.mjs'))) {
 console.log('\n[3] index.html 필수 컨테이너');
 const html = readFileSync(join(ROOT, 'index.html'), 'utf8');
 for (const id of ['app', 'trainer-grid', 'plan-grid', 'my-passes', 'bookings-view',
-  'progress-view', 'session-room', 'survey-form', 'credit-count', 'toast']) {
+  'progress-view', 'session-room', 'survey-form', 'credit-count', 'toast',
+  'view-ai', 'ai-chat-output', 'ai-routine-output']) {
   ok(`#${id} 존재`, html.includes(`id="${id}"`));
 }
 ok('module 스크립트 로드', html.includes('type="module"') && html.includes('app.js'));
@@ -180,6 +183,38 @@ const summary = buildSessionSummary(
 eq('요약 분 계산', summary.minutes, 25);
 eq('요약 완료수', summary.done, 3);
 ok('요약 달성률 계산', summary.completionRate > 0 && summary.completionRate <= 100);
+
+// ---------------------------------------------------------------------------
+console.log('\n[5] AI 레이어 검증 (ai/ + server/)');
+
+// (a) ai/ + server/ 파일 node --check
+for (const f of ['ai/config.js', 'ai/ai.js', 'server/index.mjs']) {
+  const abs = join(ROOT, f);
+  try { execFileSync(process.execPath, ['--check', abs], { stdio: 'pipe' }); ok(`node --check ${f}`, true); }
+  catch (err) { ok(`node --check ${f}`, false, String(err.stderr || err).slice(0, 120)); }
+}
+
+// (b) 데모 기본값: AI_ENDPOINT 는 반드시 빈 문자열(브라우저에 실 엔드포인트/키 미노출)
+eq('AI_ENDPOINT 빈 문자열(데모=mock)', AI_ENDPOINT, '');
+
+// (c) 실제 API 키 형식이 어디에도 포함되지 않아야 함 (문자열 결합으로 자기 자신 매칭 회피)
+const KEY_RE = new RegExp('sk-' + 'ant-[A-Za-z0-9_-]{20,}');
+let leak = null;
+for (const f of files) {
+  let content;
+  try { content = readFileSync(f, 'utf8'); } catch { continue; }
+  if (KEY_RE.test(content)) { leak = rel(f); break; }
+}
+ok('실제 API 키 형식 미포함', !leak, leak ? `발견: ${leak}` : '');
+
+// (d) MockProvider 결정론적 한국어 응답(세 가지 task)
+const aiCoach = await askAI('coach', { goal: '다이어트', level: '초급', injuries: '무릎', trainers });
+ok('coach mock 응답(mock provider)', aiCoach.provider === 'mock' && aiCoach.text.includes('추천 트레이너'));
+ok('coach mock 의학 조언 아님 고지', aiCoach.text.includes('의학적 조언이 아닙니다'));
+const aiRoutine = await askAI('routine', { goal: '근력강화', level: '중급', minutes: 45, routines });
+ok('routine mock 응답', aiRoutine.provider === 'mock' && aiRoutine.text.includes('맞춤 루틴'));
+const aiSummary = await askAI('summary', { trainerName: '김미나', routineName: '홈 지방연소 서킷', minutes: 25, done: 3, total: 6, rating: 4 });
+ok('summary mock 응답', aiSummary.provider === 'mock' && aiSummary.text.includes('세션 요약'));
 
 // ---------------------------------------------------------------------------
 console.log(`\n결과: ${pass} 통과 / ${fail} 실패`);

@@ -7,6 +7,9 @@
 import * as engine from './pt-engine.js';
 import { loadState, saveState, resetState } from './store.js';
 import { trainerAvatar, cameraTile, exerciseArt, stars } from './svg.js';
+import { askAI } from './ai/ai.js';
+
+const AI_GOALS = ['다이어트', '근력강화', '자세교정', '재활', '바디프로필', '코어강화', '산전산후', '시니어건강'];
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
@@ -40,6 +43,7 @@ async function boot() {
   wireTabs();
   wireFilters();
   wireSurvey();
+  wireAi();
   renderAll();
 }
 
@@ -502,6 +506,12 @@ function showSummary(log, routine, booking) {
       <div class="sum-stat"><b>${'★'.repeat(s.rating)}</b><span>만족도</span></div>
     </div>
     ${s.feedback ? `<div class="sum-feedback"><h4>코치 메모</h4><p>${escapeHtml(s.feedback)}</p></div>` : ''}
+    <div class="ai-card">
+      <h4>🤖 AI 세션 요약/피드백</h4>
+      <p class="section-note">일반적인 운동 가이드이며 의학적 조언이 아닙니다.</p>
+      <button class="btn secondary" data-act="ai-summary">AI 피드백 생성</button>
+      <pre class="ai-output" id="ai-summary-output" aria-live="polite"></pre>
+    </div>
     <div class="dialog-actions">
       ${booking ? `<button class="btn secondary" data-act="review2">리뷰 남기기</button>` : ''}
       <button class="btn primary" data-act="close2">확인</button>
@@ -510,6 +520,17 @@ function showSummary(log, routine, booking) {
   const dlg = $('#session-summary');
   const close = () => hideBackdrop('#summary-backdrop');
   $('.dialog-close', dlg).addEventListener('click', close);
+  const aiBtn = $('[data-act="ai-summary"]', dlg);
+  if (aiBtn) aiBtn.addEventListener('click', () => streamInto($('#ai-summary-output', dlg), aiBtn, 'summary', {
+    trainerName: booking ? booking.trainerName : '',
+    routineName: s.routineName,
+    minutes: s.minutes,
+    done: s.done,
+    total: s.total,
+    completionRate: s.completionRate,
+    rating: s.rating,
+    feedback: s.feedback,
+  }));
   $('[data-act="close2"]', dlg).addEventListener('click', () => { close(); switchView('progress'); });
   const rv = $('[data-act="review2"]', dlg);
   if (rv) rv.addEventListener('click', () => { close(); openTrainerDetail(booking.trainerId); setTimeout(() => openReviewForm(booking.trainerId), 100); });
@@ -632,6 +653,60 @@ function runSurvey() {
         </article>`).join('')}
     </div>`;
   $$('.rec-card', $('#survey-result')).forEach((c) => c.addEventListener('click', () => openTrainerDetail(c.dataset.id)));
+}
+
+// ---------------------------------------------------------------------------
+// AI 코치 (챗봇 · 맞춤 루틴 생성 · 세션 피드백) — ai/ai.js 의 askAI() 사용
+// ---------------------------------------------------------------------------
+function wireAi() {
+  const goalOpts = AI_GOALS.map((g) => `<option value="${g}">${g}</option>`).join('');
+  const chatGoal = $('#ai-chat-goal');
+  const routineGoal = $('#ai-routine-goal');
+  if (chatGoal) chatGoal.innerHTML = goalOpts;
+  if (routineGoal) routineGoal.innerHTML = goalOpts;
+
+  const chatBtn = $('#ai-chat-send');
+  if (chatBtn) chatBtn.addEventListener('click', runAiChat);
+  const routineBtn = $('#ai-routine-gen');
+  if (routineBtn) routineBtn.addEventListener('click', runAiRoutine);
+}
+
+/** 스트리밍 출력을 pre 요소에 흘려보내며 버튼 상태를 관리. */
+async function streamInto(outputEl, btnEl, task, payload) {
+  if (!outputEl) return;
+  const original = btnEl ? btnEl.textContent : '';
+  if (btnEl) { btnEl.disabled = true; btnEl.textContent = '생성 중…'; }
+  outputEl.textContent = '';
+  outputEl.classList.add('streaming');
+  try {
+    await askAI(task, payload, { onToken: (chunk) => { outputEl.textContent += chunk; } });
+  } catch (err) {
+    outputEl.textContent = `AI 오류: ${err.message}\n(서버 연동 시 server/ 프록시가 실행 중인지 확인하세요.)`;
+  } finally {
+    outputEl.classList.remove('streaming');
+    if (btnEl) { btnEl.disabled = false; btnEl.textContent = original; }
+  }
+}
+
+// (1) 운동 코치 챗봇 — 목표/부상 → 조언 + 트레이너 추천
+function runAiChat() {
+  streamInto($('#ai-chat-output'), $('#ai-chat-send'), 'coach', {
+    goal: $('#ai-chat-goal').value,
+    level: $('#ai-chat-level').value,
+    injuries: $('#ai-chat-injuries').value.trim(),
+    message: $('#ai-chat-message').value.trim(),
+    trainers: DATA.trainers,
+  });
+}
+
+// (2) 목표 → 맞춤 루틴 생성
+function runAiRoutine() {
+  streamInto($('#ai-routine-output'), $('#ai-routine-gen'), 'routine', {
+    goal: $('#ai-routine-goal').value,
+    level: $('#ai-routine-level').value,
+    minutes: Number($('#ai-routine-min').value) || 30,
+    routines: DATA.routines,
+  });
 }
 
 // ---------------------------------------------------------------------------
