@@ -1,0 +1,21 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright 2026 CLSOFTLAB (씨엘소프트랩), Dr. Lee Il-guk (이일국)
+#
+# Cloudflare Workers 설정 — 무료 티어로 상시 가동되는 무인 AI 프록시.
+#   배포:  wrangler deploy
+#   키:    wrangler secret put ANTHROPIC_API_KEY   (Secret 으로만 보관, 리포지토리에 두지 않음)
+
+name = "online-pt-ai"
+main = "worker.js"
+compatibility_date = "2024-11-01"
+
+# 비용/모델 옵션(선택). 기본은 비용 우선 claude-haiku-4-5.
+# 품질이 더 필요하면 AI_MODEL 을 claude-sonnet-5 또는 claude-opus-5 로 올리세요.
+[vars]
+AI_MODEL = "claude-haiku-4-5"
+AI_EFFORT = "low"
+AI_RATE_LIMIT_PER_MIN = "20"
+AI_MONTHLY_TOKEN_CAP = "2000000"
+
+# ANTHROPIC_API_KEY 는 vars 가 아니라 Secret 으로 설정합니다:
+#   wrangler secret put ANTHROPIC_API_KEY

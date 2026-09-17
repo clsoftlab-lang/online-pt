@@ -45,6 +45,7 @@ async function boot() {
   wireSurvey();
   wireAi();
   renderAll();
+  renderAiDigest(); // 무인 자동 브리핑(오늘의 추천 트레이너 + 맞춤 루틴) — 비차단
 }
 
 function persist() { saveState(state); }
@@ -669,6 +670,24 @@ function wireAi() {
   if (chatBtn) chatBtn.addEventListener('click', runAiChat);
   const routineBtn = $('#ai-routine-gen');
   if (routineBtn) routineBtn.addEventListener('click', runAiRoutine);
+  const digestBtn = $('#ai-digest-refresh');
+  if (digestBtn) digestBtn.addEventListener('click', renderAiDigest);
+}
+
+// (0) 무인 자동 브리핑 — 접속 시 "오늘의 추천 트레이너 + 맞춤 루틴"을 askAI 로 자동 생성.
+//     날짜 기반으로 오늘의 목표를 결정론적으로 선택 → 사용자 조작 없이 self-running.
+//     mock(오프라인)에서도 동작하며 실패 시 자동 폴백(무인). 렌더를 막지 않도록 await 하지 않음.
+function renderAiDigest() {
+  const out = $('#ai-digest-output');
+  if (!out || !DATA.trainers.length) return;
+  const goal = AI_GOALS[new Date().getDate() % AI_GOALS.length]; // 오늘의 목표(요일 대신 날짜로 순환)
+  streamInto(out, $('#ai-digest-refresh'), 'digest', {
+    goal,
+    level: '초급',
+    minutes: 30,
+    trainers: DATA.trainers,
+    routines: DATA.routines,
+  });
 }
 
 /** 스트리밍 출력을 pre 요소에 흘려보내며 버튼 상태를 관리. */

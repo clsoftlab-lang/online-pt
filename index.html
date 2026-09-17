@@ -111,6 +111,16 @@
           <br />데모 모드에서는 <b>모의 AI(MockProvider)</b>가 답합니다. 실제 Claude 연동은 <code>server/</code> 프록시 + <code>ai/config.js</code>의 <code>AI_ENDPOINT</code>로 켭니다. <b>API 키는 서버에만 보관됩니다.</b>
         </p>
 
+        <!-- (0) 무인 자동 브리핑 — 접속 시 자동 생성되는 "오늘의 추천 트레이너 + 맞춤 루틴" -->
+        <div class="ai-card" id="ai-digest-card">
+          <div class="field-row" style="justify-content:space-between;align-items:center;">
+            <h3>☀️ 오늘의 추천 트레이너 + 맞춤 루틴</h3>
+            <button class="btn" id="ai-digest-refresh" type="button" aria-label="오늘의 브리핑 새로고침">↻ 새로고침</button>
+          </div>
+          <p class="section-note">접속하면 자동으로 생성됩니다. 오프라인(mock)에서도 동작하며, <b>일반적인 운동 가이드이며 의학적 조언이 아닙니다.</b></p>
+          <pre class="ai-output" id="ai-digest-output" aria-live="polite"></pre>
+        </div>
+
         <!-- (1) 운동 코치 챗봇 -->
         <div class="ai-card">
           <h3>운동 코치 챗봇</h3>

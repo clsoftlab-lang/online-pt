@@ -121,6 +121,28 @@ export const AI_ENDPOINT = "http://localhost:8790/api/ai";
 
 자세한 내용은 [`server/README.md`](server/README.md) 참고.
 
+## ⚙️ 고도화 — 무인·저비용 실 AI 연동
+
+AI 레이어는 **무인(unmanned)·저비용** 운영에 맞춰 조정되었고, 실제 Claude 는 서버 키 뒤에서 호출됩니다.
+
+- **비용 우선 기본 모델** — `claude-haiku-4-5` (**입력 ~$1 / MTok, 출력 ~$5 / MTok**), `AI_MODEL` 로 지정.
+  품질이 더 필요할 때만 `claude-sonnet-5` / `claude-opus-5` 로 상향하세요.
+- **Prompt caching** — 안정적인 per-task system 프롬프트를 `cache_control:{type:'ephemeral'}` 블록으로 보내
+  반복 호출 시 캐시를 읽어 비용을 낮춥니다.
+- **출력 상한 + 예산** — per-task `max_tokens`(~700), IP당 분당 요청 제한(20/분), **월간 토큰 예산**
+  (`AI_MONTHLY_TOKEN_CAP`, 기본 2,000,000). 초과 시 프록시가 `429 {fallback:true}` 를 반환하고 프론트는 mock 으로 폴백합니다.
+- **대략적 비용** — 요청 1건 ≈ 입력 2K + 출력 600 토큰 ≈ **$0.005**, 즉 Haiku 4.5 기준 **1,000건당 ~$5**.
+  공유 system 블록에 **prompt caching 이 적용되면 더 저렴**합니다.
+- **무료 원클릭 배포(관리 불필요)** — **Cloudflare Workers** 변형
+  ([`server/worker.js`](server/worker.js) + [`server/wrangler.toml`](server/wrangler.toml))이 Anthropic REST 를 직접 호출합니다.
+  `wrangler deploy` 로 배포하고 `wrangler secret put ANTHROPIC_API_KEY` 로 키를 설정하면 됩니다(무료 티어 = 상시 가동, 유지보수 없음).
+- **무인·절대 안 멈춤** — 접속 시 AI 탭이 앱의 트레이너/루틴 데이터로 **"오늘의 추천 트레이너 + 맞춤 루틴"**
+  브리핑을 `askAI` 로 자동 생성합니다(날짜 기반 오늘의 목표). 오프라인(mock)에서도 동작하며, 서버 오류 /
+  `429 {fallback:true}` / 네트워크 실패 시 **자동으로 mock 폴백**하여 앱이 무인으로 계속 돌아갑니다.
+
+> **🔐 API 키는 오직 서버에만 — 브라우저·리포지토리에는 절대 두지 않습니다.** 키는 백엔드(`ANTHROPIC_API_KEY`) 또는
+> Cloudflare Worker Secret 에만 존재하며, 프론트는 `{ task, payload }` 만 전송합니다.
+
 ## 🎓 아이디어 출처
 
 이 프로젝트의 씨앗이 된 아이디어는 **용인대학교 이일국 교수님의 창업 수업**에서 나왔습니다. 그 수업의 학생들이 내놓은 창업 아이디어들은 하나같이 특출나게 빛났고, 이 프로젝트는 그중에서도 유난히 반짝였던 아이디어를 마침내 실제로 작동하는 서비스로 구현한 것입니다. 번뜩이는 상상력을 보여준 제자들에게 깊은 존경과 고마움을 전합니다. *(학생 개인정보는 전혀 담지 않았으며, 아이디어만을 클린룸으로 새로 구현했습니다.)*

@@ -89,6 +89,7 @@ data/routines.json 4 pass plans + 6 workout routines
 ai/config.js       AI_ENDPOINT ("" = demo/mock; a URL = real backend proxy)
 ai/ai.js           askAI(task, payload) — mock provider or streaming proxy client
 server/index.mjs   optional Claude proxy (@anthropic-ai/sdk, key stays server-side)
+server/worker.js   Cloudflare Workers variant (free, unmanned) + wrangler.toml
 server/            package.json · .env.example · README.md
 check.mjs          CI: JSON parse, node --check, container check, engine + AI-layer tests
 .github/workflows/ci.yml
@@ -141,6 +142,31 @@ using `process.env.ANTHROPIC_API_KEY` and streams the response back.
 > is empty and scans for any real key format) but never installs deps, runs the server, or calls the API.
 
 See [`server/README.md`](server/README.md) for details.
+
+## ⚙️ 고도화 — 무인·저비용 실 AI 연동
+
+The AI layer is tuned for **unmanned (무인) operation at low cost**, with real Claude behind a server-side key.
+
+- **Cost-first default model** — `claude-haiku-4-5` (**~$1 / MTok input, ~$5 / MTok output**), set via
+  `AI_MODEL`; raise to `claude-sonnet-5` / `claude-opus-5` only when you want higher quality.
+- **Prompt caching** — the stable per-task system prompt is sent as a `cache_control:{type:'ephemeral'}`
+  block, so repeated calls read from cache and cost less.
+- **Output caps + budget** — modest per-task `max_tokens` (~700), a per-IP rate limit (20/min), and a
+  **monthly token cap** (`AI_MONTHLY_TOKEN_CAP`, default 2,000,000). When exceeded the proxy returns
+  `429 {fallback:true}` and the front-end falls back to the mock.
+- **Rough cost estimate** — a typical request is ~2K input + ~600 output tokens ≈ **$0.005**, so
+  **~$5 per 1,000 requests** on Haiku 4.5 — and **lower with prompt caching** on the shared system block.
+- **Free one-deploy, no server to babysit** — a **Cloudflare Workers** variant
+  ([`server/worker.js`](server/worker.js) + [`server/wrangler.toml`](server/wrangler.toml)) calls the
+  Anthropic REST API directly. Deploy with `wrangler deploy` and set the key via
+  `wrangler secret put ANTHROPIC_API_KEY` (free tier = always-on, nothing to maintain).
+- **Autonomous, never-breaks** — the AI tab auto-generates an **"오늘의 추천 트레이너 + 맞춤 루틴"**
+  digest on load (deterministic goal-of-the-day), built from the app's own trainer/routine data via
+  `askAI`. It works offline through the mock, and any server error / `429 {fallback:true}` / network
+  failure **auto-falls back to the mock**, so the app keeps running unmanned.
+
+> **🔐 API keys are server-side only — never in the browser or repo.** The key lives only in the backend
+> (`ANTHROPIC_API_KEY`) or the Cloudflare Worker secret; the front-end only ever sends `{ task, payload }`.
 
 ## 🎓 Idea origin
 

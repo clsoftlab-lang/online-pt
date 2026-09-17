@@ -187,8 +187,8 @@ ok('요약 달성률 계산', summary.completionRate > 0 && summary.completionRa
 // ---------------------------------------------------------------------------
 console.log('\n[5] AI 레이어 검증 (ai/ + server/)');
 
-// (a) ai/ + server/ 파일 node --check
-for (const f of ['ai/config.js', 'ai/ai.js', 'server/index.mjs']) {
+// (a) ai/ + server/ 파일 node --check (Cloudflare Worker 포함)
+for (const f of ['ai/config.js', 'ai/ai.js', 'server/index.mjs', 'server/worker.js']) {
   const abs = join(ROOT, f);
   try { execFileSync(process.execPath, ['--check', abs], { stdio: 'pipe' }); ok(`node --check ${f}`, true); }
   catch (err) { ok(`node --check ${f}`, false, String(err.stderr || err).slice(0, 120)); }
@@ -215,6 +215,11 @@ const aiRoutine = await askAI('routine', { goal: '근력강화', level: '중급'
 ok('routine mock 응답', aiRoutine.provider === 'mock' && aiRoutine.text.includes('맞춤 루틴'));
 const aiSummary = await askAI('summary', { trainerName: '김미나', routineName: '홈 지방연소 서킷', minutes: 25, done: 3, total: 6, rating: 4 });
 ok('summary mock 응답', aiSummary.provider === 'mock' && aiSummary.text.includes('세션 요약'));
+
+// (e) 무인 자동 브리핑(digest) — 오늘의 추천 트레이너 + 맞춤 루틴 (mock/오프라인 동작)
+const aiDigest = await askAI('digest', { goal: '다이어트', level: '초급', minutes: 30, trainers, routines });
+ok('digest mock 응답(오늘의 브리핑)', aiDigest.provider === 'mock' && aiDigest.text.includes('오늘의 추천 트레이너') && aiDigest.text.includes('오늘의 맞춤 루틴'));
+ok('digest 의학 조언 아님 고지', aiDigest.text.includes('의학적 조언이 아닙니다'));
 
 // ---------------------------------------------------------------------------
 console.log(`\n결과: ${pass} 통과 / ${fail} 실패`);

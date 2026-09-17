@@ -24,16 +24,29 @@ const DISCLAIMER = '※ 일반적인 운동 가이드이며 의학적 조언이 
  * @returns {Promise<{text: string, provider: 'mock'|'server', task: string}>}
  */
 export async function askAI(task, payload = {}, { onToken } = {}) {
-  if (!AI_ENDPOINT) {
-    const text = mockProvider(task, payload);
-    if (onToken) await streamChunks(text, onToken);
-    return { text, provider: 'mock', task };
+  if (AI_ENDPOINT) {
+    try {
+      return await serverProvider(task, payload, onToken);
+    } catch (err) {
+      // 이미 서버 토큰을 일부 흘려보낸 경우: 중복 방지를 위해 부분 결과 반환
+      if (err && err.streamed) {
+        return { text: err.partial || '', provider: 'server', task, error: String(err.message || err) };
+      }
+      // 무인(never-breaks) 원칙: 서버 실패 / 429 {fallback:true} / 네트워크 오류
+      //   → mock 으로 자동 폴백해 앱이 절대 멈추지 않게 함
+      const text = mockProvider(task, payload);
+      if (onToken) await streamChunks(text, onToken);
+      return { text, provider: 'mock', task, fallback: true };
+    }
   }
-  return await serverProvider(task, payload, onToken);
+  const text = mockProvider(task, payload);
+  if (onToken) await streamChunks(text, onToken);
+  return { text, provider: 'mock', task };
 }
 
 // ---------------------------------------------------------------------------
 // 실제 백엔드 프록시(스트리밍) — 키는 서버에만 존재
+//   실패/429{fallback:true} 는 예외로 던져 askAI 가 mock 으로 폴백하게 함.
 // ---------------------------------------------------------------------------
 async function serverProvider(task, payload, onToken) {
   const res = await fetch(AI_ENDPOINT, {
@@ -42,20 +55,35 @@ async function serverProvider(task, payload, onToken) {
     body: JSON.stringify({ task, payload }),
   });
   if (!res.ok) {
+    // 429 {fallback:true}(비용 예산/레이트리밋) 또는 기타 오류 → 폴백 트리거
+    let fallback = res.status === 429;
+    try {
+      const j = await res.clone().json();
+      if (j && j.fallback) fallback = true;
+    } catch { /* JSON 아님 — 무시 */ }
     const msg = await res.text().catch(() => '');
-    throw new Error(`AI 서버 오류 ${res.status}: ${msg.slice(0, 200)}`);
+    const e = new Error(`AI 서버 오류 ${res.status}: ${String(msg).slice(0, 200)}`);
+    e.fallback = fallback; // askAI 는 streamed 가 아니면 항상 mock 폴백
+    throw e;
   }
   // 서버는 text/plain 청크로 델타를 흘려보냄
   if (res.body && res.body.getReader) {
     const reader = res.body.getReader();
     const decoder = new TextDecoder();
     let text = '';
-    for (;;) {
-      const { value, done } = await reader.read();
-      if (done) break;
-      const chunk = decoder.decode(value, { stream: true });
-      text += chunk;
-      if (onToken && chunk) onToken(chunk);
+    try {
+      for (;;) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        const chunk = decoder.decode(value, { stream: true });
+        text += chunk;
+        if (onToken && chunk) onToken(chunk);
+      }
+    } catch (err) {
+      // 스트리밍 도중 끊김: 이미 출력한 부분은 유지(중복 폴백 금지)
+      const e = new Error(String(err?.message || err));
+      e.streamed = true; e.partial = text;
+      throw e;
     }
     return { text, provider: 'server', task };
   }
@@ -72,8 +100,46 @@ function mockProvider(task, payload) {
     case 'coach': return mockCoach(payload);
     case 'routine': return mockRoutine(payload);
     case 'summary': return mockSummary(payload);
+    case 'digest': return mockDigest(payload);
     default: return `지원하지 않는 요청(task=${task})입니다.\n\n${DISCLAIMER}`;
   }
+}
+
+/** (4) 무인 자동 브리핑 — 앱 접속 시 "오늘의 추천 트레이너 + 맞춤 루틴"(오프라인 mock). */
+function mockDigest(p = {}) {
+  const goal = (p.goal || '전반적 건강').trim();
+  const level = (p.level || '초급').trim();
+  const minutes = Number(p.minutes) || 30;
+  const trainers = Array.isArray(p.trainers) ? p.trainers : [];
+
+  const lines = [];
+  lines.push(`☀️ 오늘의 브리핑 — 목표: ${goal} · ${level} · ${minutes}분`);
+
+  // 오늘의 추천 트레이너(coach 랭킹 재사용, 상위 2명)
+  const coach = mockCoach({ goal, level, trainers });
+  const recBlock = coach.split('■ 추천 트레이너')[1];
+  lines.push('');
+  lines.push('■ 오늘의 추천 트레이너');
+  if (recBlock) {
+    recBlock.split('\n').map((s) => s.trim()).filter((s) => /^\d\./.test(s)).slice(0, 2)
+      .forEach((s) => lines.push(`• ${s}`));
+  } else {
+    lines.push('• “트레이너 탐색” 탭에서 목표에 맞는 트레이너를 확인하세요.');
+  }
+
+  // 오늘의 맞춤 루틴(routine 재사용, 메인 동작 상위 3개만 요약)
+  const routine = mockRoutine({ goal, level, minutes, routines: p.routines });
+  const mains = routine.split('\n').filter((s) => /^\s{3}\d+\./.test(s)).slice(0, 3);
+  lines.push('');
+  lines.push('■ 오늘의 맞춤 루틴');
+  if (mains.length) mains.forEach((s) => lines.push(`•${s.replace(/^\s+\d+\./, '')}`));
+  else lines.push('• 워밍업 5분 · 스쿼트/푸시업/플랭크 각 3세트 · 마무리 스트레칭 5분');
+
+  lines.push('');
+  lines.push('“🤖 AI 코치” 탭에서 목표를 바꿔 더 자세한 코칭과 루틴을 받아보세요.');
+  lines.push('');
+  lines.push(DISCLAIMER);
+  return lines.join('\n');
 }
 
 /** (1) AI 운동 코치 챗봇 — 목표/부상 → 조언 + 트레이너 추천. */
